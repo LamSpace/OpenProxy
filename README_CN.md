@@ -3,6 +3,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/java-25%2B-orange)](https://jdk.java.net/)
 [![JMH](https://img.shields.io/badge/benchmark-JMH%201.37-red)](https://github.com/openjdk/jmh)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.lamspace/openproxy)](https://central.sonatype.com/artifact/io.github.lamspace/openproxy)
 
 [English](README.md) | [用户指导](docs/guide/README_CN.md) | [基准测试报告](docs/benchmark-results_cn.md)
 
@@ -130,21 +131,22 @@ JMH 基准测试 | Java 25（单位 ns/op，越低越好）。完整表格、方
 
 ## 📦 安装
 
-```bash
-git clone https://github.com/lamspace/openproxy.git
-cd openproxy
-mvn install -DskipTests
-```
-
-Maven Central 发布进行中；在此之前，请从本地仓库引用：
+OpenProxy 已发布到 Maven Central，直接声明依赖即可：
 
 ```xml
-
 <dependency>
     <groupId>io.github.lamspace</groupId>
     <artifactId>openproxy</artifactId>
     <version>0.1.0</version>
 </dependency>
+```
+
+或从源码构建：
+
+```bash
+git clone https://github.com/lamspace/openproxy.git
+cd openproxy
+mvn install -DskipTests
 ```
 
 ## 🆚 OpenProxy vs 其他方案
@@ -161,7 +163,7 @@ Maven Central 发布进行中；在此之前，请从本地仓库引用：
 | 热加载 / rebind   | ✅                   | ❌                          | ❌                        |
 | 注解驱动 API      | ✅                   | ❌                          | ❌                        |
 | 函数式 API        | ✅ lambda            | ✅                          | ✅                        |
-| Maven Central     | 即将上线             | ✅                          | 内置                      |
+| Maven Central     | ✅ 0.1.0             | ✅                          | 内置                      |
 
 ## 📖 文档
 

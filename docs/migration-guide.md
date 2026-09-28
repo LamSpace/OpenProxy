@@ -173,7 +173,7 @@ Methods with the same signature and return type across interfaces are merged; am
 | Static method proxy            | Yes                                  | No                         | No                            |
 | Constructor interception       | Yes                                  | Yes                        | No                            |
 | Hot reload / rebind            | Yes (`evict`, `rebind`)              | No                         | No                            |
-| Maven Central                  | Coming soon                          | Yes                        | Built-in (JDK)                |
+| Maven Central                  | Yes (0.1.0)                          | Yes                        | Built-in (JDK)                |
 
 ---
 

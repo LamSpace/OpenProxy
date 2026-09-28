@@ -16,9 +16,9 @@ mvn install -DskipTests
 
 这会把 `openproxy` 构件安装到你的本地 Maven 仓库。
 
-## Maven 依赖（即将上线）
+## Maven 依赖
 
-OpenProxy 尚未发布到 Maven Central。在此之前，请从本地仓库引用：
+OpenProxy 已发布到 Maven Central，直接声明依赖即可：
 
 ```xml
 <dependency>

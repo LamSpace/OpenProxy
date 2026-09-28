@@ -3,6 +3,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/java-25%2B-orange)](https://jdk.java.net/)
 [![JMH](https://img.shields.io/badge/benchmark-JMH%201.37-red)](https://github.com/openjdk/jmh)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.lamspace/openproxy)](https://central.sonatype.com/artifact/io.github.lamspace/openproxy)
 
 [中文版](README_CN.md) | [User Guide](docs/guide/README.md) | [Benchmark Results](docs/benchmark-results.md)
 
@@ -130,21 +131,22 @@ Class proxies are defined in the target's package via `MethodHandles.privateLook
 
 ## 📦 Installation
 
-```bash
-git clone https://github.com/lamspace/openproxy.git
-cd openproxy
-mvn install -DskipTests
-```
-
-Maven Central publishing is in progress; until then, depend on the artifact from your local repository:
+OpenProxy is available on Maven Central:
 
 ```xml
-
 <dependency>
     <groupId>io.github.lamspace</groupId>
     <artifactId>openproxy</artifactId>
     <version>0.1.0</version>
 </dependency>
+```
+
+Or build from source:
+
+```bash
+git clone https://github.com/lamspace/openproxy.git
+cd openproxy
+mvn install -DskipTests
 ```
 
 ## 🆚 OpenProxy vs the alternatives
@@ -161,7 +163,7 @@ Maven Central publishing is in progress; until then, depend on the artifact from
 | Hot reload / rebind      | ✅                     | ❌                          | ❌                        |
 | Annotation-driven API    | ✅                     | ❌                          | ❌                        |
 | Functional API           | ✅ lambda              | ✅                          | ✅                        |
-| Maven Central            | Coming soon            | ✅                          | Built-in                  |
+| Maven Central            | ✅ 0.1.0                 | ✅                          | Built-in                  |
 
 ## 📖 Documentation
 

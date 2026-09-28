@@ -16,9 +16,9 @@ mvn install -DskipTests
 
 This installs the `openproxy` artifact into your local Maven repository.
 
-## Maven dependency (coming soon)
+## Maven dependency
 
-OpenProxy is not yet published to Maven Central. Until then, depend on it from your local repository:
+OpenProxy is published on Maven Central:
 
 ```xml
 <dependency>
