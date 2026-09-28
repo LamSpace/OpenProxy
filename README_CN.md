@@ -143,7 +143,7 @@ Maven Central 发布进行中；在此之前，请从本地仓库引用：
 <dependency>
     <groupId>io.github.lamspace</groupId>
     <artifactId>openproxy</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 

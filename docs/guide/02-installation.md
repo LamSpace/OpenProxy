@@ -24,7 +24,7 @@ OpenProxy is not yet published to Maven Central. Until then, depend on it from y
 <dependency>
     <groupId>io.github.lamspace</groupId>
     <artifactId>openproxy</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 
