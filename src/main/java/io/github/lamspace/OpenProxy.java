@@ -20,6 +20,8 @@ import io.github.lamspace.generator.ClassGenerator;
 import io.github.lamspace.generator.InterfaceGenerator;
 import io.github.lamspace.generator.InterfaceMethodResolver;
 import io.github.lamspace.generator.StaticMethodGenerator;
+import io.github.lamspace.internal.CrossLoaderDiagnostics;
+import io.github.lamspace.internal.CrossLoaderDiagnostics;
 import io.github.lamspace.internal.LookupManager;
 import io.github.lamspace.internal.Rebindable;
 
@@ -302,21 +304,30 @@ public final class OpenProxy {
                     String pkg = anchor.getPackageName();
                     packagePrefix = pkg.isEmpty() ? "" : pkg.replace('.', '/') + "/";
                 }
+                if (anchor == null) {
+                    // This path defines with the library's own lookup, so an
+                    // interface its loader cannot see would surface as
+                    // NoClassDefFoundError — an Error that the catch below
+                    // never sees. Checked before generating any bytecode.
+                    requireResolvableFrom(OpenProxy.class.getClassLoader(),
+                            interfaces);
+                }
                 InterfaceGenerator generator = new InterfaceGenerator(
                         interfaces, dummy, mapping, packagePrefix);
                 bytecode = generator.generate();
                 MethodHandles.Lookup lookup = (anchor == null)
                         ? MethodHandles.lookup()
                         : LookupManager.getLookup(anchor);
-                return lookup.defineHiddenClass(bytecode, true).lookupClass();
+                return defineHidden(lookup, bytecode,
+                        (anchor != null) ? anchor : interfaces[0]);
             } else {
                 Class<?> target = params.targetClass();
                 ClassGenerator generator = new ClassGenerator(target,
                         dummy, mapping, params.ctorIntercept(),
                         params.constructorArgs());
                 bytecode = generator.generate();
-                return LookupManager.getLookup(target)
-                        .defineHiddenClass(bytecode, true).lookupClass();
+                return defineHidden(LookupManager.getLookup(target),
+                        bytecode, target);
             }
         } catch (IllegalArgumentException e) {
             // Surface actionable errors (e.g. the --add-opens hint) as-is
@@ -325,6 +336,62 @@ public final class OpenProxy {
         } catch (Exception e) {
             throw new RuntimeException(
                     "Failed to generate proxy class", e);
+        }
+    }
+
+    /**
+     * Defines the generated hidden class, reporting the JVM's
+     * full-privilege-access rejection as the cross-loader diagnostic.
+     * {@code privateLookupIn} accepts a child-loaded target but the definition
+     * then fails, so the two loaders are named here instead of leaving an
+     * {@code IllegalAccessException} as the only explanation.
+     *
+     * @param lookup  the lookup that owns the defining loader and package
+     * @param bytecode the generated proxy class bytes
+     * @param type    the target type, used for the diagnostic message
+     * @return the defined hidden class
+     * @throws IllegalArgumentException if the type cannot be defined into the
+     *                                  lookup's loader
+     */
+    private static Class<?> defineHidden(MethodHandles.Lookup lookup,
+                                         byte[] bytecode, Class<?> type) {
+        try {
+            return lookup.defineHiddenClass(bytecode, true).lookupClass();
+        } catch (IllegalAccessException e) {
+            throw CrossLoaderDiagnostics.forType(type, type.getClassLoader(),
+                    lookup.lookupClass().getClassLoader(), e.toString());
+        }
+    }
+
+    /**
+     * Verifies that every interface resolves — to the same {@code Class}
+     * object — from the loader that would define the proxy. A name that does
+     * not resolve would fail later with {@link NoClassDefFoundError}; a name
+     * that resolves to a <em>different</em> class (child-first loader) would
+     * yield a proxy implementing the wrong type and fail at the caller's cast.
+     *
+     * @param defining the loader that would own the generated class
+     * @param types    the interfaces or static target the generated class
+     *                 references by name
+     * @throws IllegalArgumentException if a type is not usable from
+     *                                  {@code defining}
+     */
+    private static void requireResolvableFrom(ClassLoader defining,
+                                              Class<?>... types) {
+        for (Class<?> type : types) {
+            Class<?> seen;
+            try {
+                seen = Class.forName(type.getName(), false, defining);
+            } catch (ClassNotFoundException | LinkageError e) {
+                throw CrossLoaderDiagnostics.forType(type,
+                        type.getClassLoader(), defining, String.valueOf(e));
+            }
+            if (seen != type) {
+                throw CrossLoaderDiagnostics.forType(type,
+                        type.getClassLoader(), defining,
+                        "the same binary name resolves to a different class "
+                                + "from the defining loader");
+            }
         }
     }
 
@@ -648,6 +715,11 @@ public final class OpenProxy {
             throw new IllegalArgumentException(
                     "static proxy requires a class, not an interface");
         }
+
+        // The static proxy is generated into the library's own loader, so the
+        // target has to be resolvable from there — otherwise defineHiddenClass
+        // below escapes with NoClassDefFoundError, which is an Error.
+        requireResolvableFrom(OpenProxy.class.getClassLoader(), target);
 
         Method[] methods = collectStaticMethods(target);
         MatchResult matchResult = matchMethods(methods, groups);

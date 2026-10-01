@@ -13,6 +13,20 @@ The next `proxy(...)` call regenerates a fresh class. Existing instances are una
 
 Cache-key note: class proxies key on the target class; interface proxies key on the **first** interface, so pass that to `evict`.
 
+## Redeploying into a fresh ClassLoader
+
+Eviction is loader-aware, but generation is not: OpenProxy cannot yet create a
+proxy for a class owned by a loader its own classes cannot see. A
+restart-classloader redeploy therefore fails with the cross-loader message
+described in [JPMS / Strong Encapsulation](11-jpms.md#class-loader-constraints),
+and `evict` / `evictClassLoader` cover the shapes that do work today — targets
+in the library's loader, or targets in a loader that owns its own OpenProxy
+copy.
+
+If you take the private-copy route, create the `Interceptor` inside that loader
+as well: handing the copy an interceptor from another loader fails with
+`argument type mismatch`.
+
 ## Swapping interceptors on a live instance
 
 ```java
