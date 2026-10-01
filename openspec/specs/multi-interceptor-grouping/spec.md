@@ -2,7 +2,7 @@
 
 Allow proxy creators to bind different `Interceptor` instances to different method families (e.g., getters vs setters) through declarative `Group` declarations, eliminating manual dispatch boilerplate inside `intercept()`.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Method group binding via Group API
 

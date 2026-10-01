@@ -2,6 +2,8 @@
 
 Provide runtime proxy classes that implement multiple Java interfaces at once, merging shared method signatures and rejecting ambiguous cross-interface conflicts.
 
+## Requirements
+
 ### Requirement: Multi-interface proxy creation
 
 The system SHALL generate a single runtime proxy class that implements all given interfaces. `OpenProxy.proxy(Class<?>[] interfaces, Interceptor)` and `OpenProxy.proxy(Class<?>[] interfaces, Group...)` SHALL return an `Object` that can be cast to each interface in `interfaces`, with every non-static, non-final method call routed through the interceptor.

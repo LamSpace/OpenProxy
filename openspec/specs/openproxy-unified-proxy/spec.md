@@ -2,7 +2,7 @@
 
 Unified dynamic proxy API that creates proxies for both concrete classes and Java interfaces through a single entry point (`OpenProxy.proxy()`) with a single `Interceptor` callback interface, using hashCode-based super-method dispatch for class proxies.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Unified proxy creation entry point
 

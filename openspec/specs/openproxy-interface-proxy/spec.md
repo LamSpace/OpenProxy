@@ -2,6 +2,8 @@
 
 Enable runtime proxy implementations of Java interfaces using MethodHandle-based dispatch, complementing the existing class proxy support and providing a reflection-free alternative to `java.lang.reflect.Proxy`.
 
+## Requirements
+
 ### Requirement: Interface proxy creation
 
 The system SHALL generate a runtime class that `extends Object` and `implements` the target interface and `DispatchTarget`, routing all non-static, non-final method calls through a user-provided `Interceptor` handler.
