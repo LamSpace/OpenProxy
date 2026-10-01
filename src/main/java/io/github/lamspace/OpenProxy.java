@@ -105,7 +105,8 @@ public final class OpenProxy {
                                Class<?>[] interfaces,
                                MethodMapping mapping,
                                Object[] constructorArgs,
-                               boolean ctorIntercept) {
+                               boolean ctorIntercept,
+                               MethodHandles.Lookup lookup) {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -115,7 +116,20 @@ public final class OpenProxy {
                     && mapping.equals(other.mapping)
                     && Arrays.equals(argTypes(constructorArgs),
                     argTypes(other.constructorArgs))
-                    && ctorIntercept == other.ctorIntercept;
+                    && ctorIntercept == other.ctorIntercept
+                    && lookupEquals(other.lookup);
+        }
+
+        /**
+         * Two supplied lookups coalesce into one cache entry when they are
+         * rooted in the same class. {@link MethodHandles.Lookup} compares by
+         * identity, so comparing the lookups themselves would regenerate a
+         * proxy class on every call; the root class alone identifies the
+         * capability because every accepted lookup must already grant full
+         * privilege access (see {@code OpenProxy::requireUsableLookup}).
+         */
+        private static Class<?> lookupRoot(MethodHandles.Lookup lookup) {
+            return lookup == null ? null : lookup.lookupClass();
         }
 
         @Override
@@ -127,7 +141,19 @@ public final class OpenProxy {
             result = 31 * result + mapping.hashCode();
             result = 31 * result + Arrays.hashCode(argTypes(constructorArgs));
             result = 31 * result + Boolean.hashCode(ctorIntercept);
+            Class<?> root = lookupRoot(lookup);
+            result = 31 * result + (root != null
+                    ? System.identityHashCode(root) : 0);
             return result;
+        }
+
+        /**
+         * Null-safe comparison of the optional supplied lookups, by root class
+         * (see {@link #lookupRoot}). Two lookups rooted in the same class
+         * coalesce into one cache entry; different roots never share.
+         */
+        private boolean lookupEquals(MethodHandles.Lookup other) {
+            return lookupRoot(lookup) == lookupRoot(other);
         }
 
         /**
@@ -304,7 +330,13 @@ public final class OpenProxy {
                     String pkg = anchor.getPackageName();
                     packagePrefix = pkg.isEmpty() ? "" : pkg.replace('.', '/') + "/";
                 }
-                if (anchor == null) {
+                if (params.lookup() != null) {
+                    // A hidden class is defined in its lookup class's package,
+                    // so the generated name follows the supplied lookup.
+                    packagePrefix = internalPackageOf(
+                            params.lookup().lookupClass());
+                }
+                if (anchor == null && params.lookup() == null) {
                     // This path defines with the library's own lookup, so an
                     // interface its loader cannot see would surface as
                     // NoClassDefFoundError — an Error that the catch below
@@ -315,18 +347,25 @@ public final class OpenProxy {
                 InterfaceGenerator generator = new InterfaceGenerator(
                         interfaces, dummy, mapping, packagePrefix);
                 bytecode = generator.generate();
-                MethodHandles.Lookup lookup = (anchor == null)
-                        ? MethodHandles.lookup()
-                        : LookupManager.getLookup(anchor);
+                MethodHandles.Lookup lookup = params.lookup() != null
+                        ? params.lookup()
+                        : (anchor == null)
+                                ? MethodHandles.lookup()
+                                : LookupManager.getLookup(anchor);
                 return defineHidden(lookup, bytecode,
                         (anchor != null) ? anchor : interfaces[0]);
             } else {
                 Class<?> target = params.targetClass();
+                MethodHandles.Lookup supplied = params.lookup();
                 ClassGenerator generator = new ClassGenerator(target,
                         dummy, mapping, params.ctorIntercept(),
+                        (supplied != null)
+                                ? supplied.lookupClass().getPackageName()
+                                : null,
                         params.constructorArgs());
                 bytecode = generator.generate();
-                return defineHidden(LookupManager.getLookup(target),
+                return defineHidden(supplied != null ? supplied
+                                : LookupManager.getLookup(target),
                         bytecode, target);
             }
         } catch (IllegalArgumentException e) {
@@ -358,8 +397,12 @@ public final class OpenProxy {
         try {
             return lookup.defineHiddenClass(bytecode, true).lookupClass();
         } catch (IllegalAccessException e) {
+            // Report the library's own loader, not the lookup's class: a
+            // privateLookupIn result is rooted in the *target*, so its loader
+            // would render as the target's and the message would name one
+            // loader twice while meaning to name two.
             throw CrossLoaderDiagnostics.forType(type, type.getClassLoader(),
-                    lookup.lookupClass().getClassLoader(), e.toString());
+                    OpenProxy.class.getClassLoader(), e.toString());
         }
     }
 
@@ -539,6 +582,23 @@ public final class OpenProxy {
     @SuppressWarnings("unchecked")
     public static <T> T proxy(Class<T> target, Object[] constructorArgs,
                               Group... groups) {
+        return proxy(target, null, constructorArgs, groups);
+    }
+
+    /**
+     * Class-proxy core.
+     *
+     * @param target          the class or interface to proxy
+     * @param lookup          caller-supplied definition lookup, or {@code null}
+     *                        to use the library's own strategy
+     * @param constructorArgs arguments for the superclass constructor
+     * @param groups          group bindings
+     * @param <T>             the proxy type
+     * @return a proxy instance of type {@code T}
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T proxy(Class<T> target, MethodHandles.Lookup lookup,
+                               Object[] constructorArgs, Group[] groups) {
         if (target == null) {
             throw new IllegalArgumentException(
                     "target must not be null");
@@ -552,7 +612,10 @@ public final class OpenProxy {
         }
 
         if (target.isInterface()) {
-            return (T) proxyInterfaces(new Class<?>[]{target}, groups);
+            return (T) proxyInterfaces(new Class<?>[]{target}, groups, lookup);
+        }
+        if (lookup != null) {
+            requireUsableLookup(lookup, target);
         }
 
         // 1. Match methods to interceptors
@@ -560,7 +623,7 @@ public final class OpenProxy {
 
         // 2. Cache lookup (keyed on mapping shape, not instances)
         CacheParams params = new CacheParams(target, null,
-                matchResult.mapping(), constructorArgs, false);
+                matchResult.mapping(), constructorArgs, false, lookup);
 
         try {
             Class<?> proxyClass = PROXY_CLASS_CACHE.get(target, params);
@@ -627,6 +690,27 @@ public final class OpenProxy {
     public static <T> T proxy(Class<T> target, Object[] constructorArgs,
                               ConstructorInterceptor ctorInterceptor,
                               Group... groups) {
+        return proxyClassWithCtorHook(target, null, constructorArgs,
+                ctorInterceptor, groups);
+    }
+
+    /**
+     * Constructor-interception core.
+     *
+     * @param target          the class to proxy
+     * @param lookup          caller-supplied definition lookup, or {@code null}
+     * @param constructorArgs arguments for the superclass constructor
+     * @param ctorInterceptor the constructor hook
+     * @param groups          group bindings
+     * @param <T>             the proxy type
+     * @return a proxy instance of type {@code T}
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T proxyClassWithCtorHook(Class<T> target,
+                               MethodHandles.Lookup lookup,
+                               Object[] constructorArgs,
+                               ConstructorInterceptor ctorInterceptor,
+                               Group[] groups) {
         if (target == null) {
             throw new IllegalArgumentException("target must not be null");
         }
@@ -646,10 +730,13 @@ public final class OpenProxy {
         if (constructorArgs == null) {
             constructorArgs = new Object[0];
         }
+        if (lookup != null) {
+            requireUsableLookup(lookup, target);
+        }
 
         MatchResult matchResult = matchMethods(target, groups);
         CacheParams params = new CacheParams(target, null,
-                matchResult.mapping(), constructorArgs, true);
+                matchResult.mapping(), constructorArgs, true, lookup);
 
         try {
             Class<?> proxyClass = PROXY_CLASS_CACHE.get(target, params);
@@ -704,6 +791,23 @@ public final class OpenProxy {
      * @return a generated proxy class (fresh per call, not cached)
      */
     public static Class<?> proxyStatic(Class<?> target, Group... groups) {
+        return proxyStatic(target, null, groups);
+    }
+
+    /**
+     * Creates a static-method proxy class for a target the library's loader
+     * cannot see, defining the generated class through a caller-supplied
+     * lookup. The class is placed in the lookup class's package.
+     *
+     * @param target the class whose static methods to shadow; must not be null
+     *               and must not be an interface
+     * @param lookup a full-privilege lookup rooted in the target's loader
+     * @param groups one or more Group bindings; must not be null or empty
+     * @return a generated proxy class (fresh per call, not cached)
+     */
+    public static Class<?> proxyStatic(Class<?> target,
+                                       MethodHandles.Lookup lookup,
+                                       Group... groups) {
         if (target == null) {
             throw new IllegalArgumentException("target must not be null");
         }
@@ -716,21 +820,29 @@ public final class OpenProxy {
                     "static proxy requires a class, not an interface");
         }
 
-        // The static proxy is generated into the library's own loader, so the
-        // target has to be resolvable from there — otherwise defineHiddenClass
-        // below escapes with NoClassDefFoundError, which is an Error.
-        requireResolvableFrom(OpenProxy.class.getClassLoader(), target);
+        if (lookup != null) {
+            requireUsableLookup(lookup, target);
+            requireResolvableFrom(lookup.lookupClass().getClassLoader(), target);
+        } else {
+            // The static proxy is generated into the library's own loader, so
+            // the target has to be resolvable from there — otherwise
+            // defineHiddenClass below escapes with NoClassDefFoundError, an
+            // Error that the catch below cannot translate.
+            requireResolvableFrom(OpenProxy.class.getClassLoader(), target);
+        }
 
         Method[] methods = collectStaticMethods(target);
         MatchResult matchResult = matchMethods(methods, groups);
 
         try {
             StaticMethodGenerator generator = new StaticMethodGenerator(
-                    methods, matchResult.interceptors(),
-                    matchResult.mapping());
+                    methods, matchResult.interceptors(), matchResult.mapping(),
+                    (lookup != null)
+                            ? lookup.lookupClass().getPackageName() : null);
             byte[] bytecode = generator.generate();
-            Class<?> proxyClass = MethodHandles.lookup()
-                    .defineHiddenClass(bytecode, true).lookupClass();
+            Class<?> proxyClass = defineHidden(
+                    (lookup != null) ? lookup : MethodHandles.lookup(),
+                    bytecode, target);
 
             Method bind = proxyClass.getMethod("__bindStatics",
                     Interceptor[].class);
@@ -871,6 +983,21 @@ public final class OpenProxy {
      */
     private static Object proxyInterfaces(Class<?>[] interfaces,
                                           Group... groups) {
+        return proxyInterfaces(interfaces, groups, null);
+    }
+
+    /**
+     * Interface-proxy core.
+     *
+     * @param interfaces the interfaces to implement
+     * @param groups     group bindings
+     * @param lookup     caller-supplied definition lookup, or {@code null} to
+     *                   use the library's own strategy
+     * @return a proxy instance implementing every interface
+     */
+    private static Object proxyInterfaces(Class<?>[] interfaces,
+                                          Group[] groups,
+                                          MethodHandles.Lookup lookup) {
         if (interfaces == null || interfaces.length == 0) {
             throw new IllegalArgumentException(
                     "interfaces must not be null or empty");
@@ -886,10 +1013,15 @@ public final class OpenProxy {
             }
         }
         Class<?>[] copy = interfaces.clone();
-        nonPublicAnchor(copy); // fail fast on cross-package non-public interfaces
+        Class<?> anchor = nonPublicAnchor(copy);
+        // nonPublicAnchor fails fast on cross-package non-public interfaces
+        if (lookup != null) {
+            requireUsableLookup(lookup, (anchor != null) ? anchor : copy[0]);
+            requireResolvableFrom(lookup.lookupClass().getClassLoader(), copy);
+        }
         MatchResult matchResult = matchMethods(copy, groups);
         CacheParams params = new CacheParams(null, copy,
-                matchResult.mapping(), new Object[0], false);
+                matchResult.mapping(), new Object[0], false, lookup);
         try {
             Class<?> proxyClass = PROXY_CLASS_CACHE.get(copy[0], params);
             int interceptorCount = matchResult.interceptors().length;
@@ -927,6 +1059,200 @@ public final class OpenProxy {
             throw new IllegalArgumentException("target must not be null");
         }
         return proxy(target, resolveAnnotationGroups(interceptor));
+    }
+
+    /**
+     * Creates a proxy for a target owned by a loader the library cannot see,
+     * defining the generated class through a caller-supplied lookup. The class
+     * is placed in the lookup class's package.
+     *
+     * <p>The lookup must be a full-privilege lookup rooted in the target's own
+     * loader — normally
+     * {@code MethodHandles.privateLookupIn(targetClass, MethodHandles.lookup())}
+     * called from inside that loader — and that loader must be able to resolve
+     * OpenProxy's own types, by delegating to the library's loader or by
+     * carrying its own copy of it.
+     *
+     * @param target      the class or interface to proxy
+     * @param lookup      full-privilege lookup rooted in the target's loader
+     * @param interceptor the method interceptor; must not be null
+     * @param <T>         the proxy type
+     * @return a proxy instance of type {@code T}
+     * @throws IllegalArgumentException if the lookup cannot serve this target
+     */
+    public static <T> T proxy(Class<T> target, MethodHandles.Lookup lookup,
+                              Interceptor interceptor) {
+        if (interceptor == null) {
+            throw new IllegalArgumentException("interceptor must not be null");
+        }
+        return proxy(target, lookup, new Object[0],
+                new Group[]{Group.otherwise(interceptor)});
+    }
+
+    /**
+     * Creates a proxy with method-group-based assignment for a target owned by
+     * a loader the library cannot see. See
+     * {@link #proxy(Class, MethodHandles.Lookup, Interceptor)} for the lookup
+     * contract.
+     *
+     * @param target the class or interface to proxy
+     * @param lookup full-privilege lookup rooted in the target's loader
+     * @param groups one or more Group bindings; must not be null or empty
+     * @param <T>    the proxy type
+     * @return a proxy instance of type {@code T}
+     */
+    public static <T> T proxy(Class<T> target, MethodHandles.Lookup lookup,
+                              Group... groups) {
+        return proxy(target, lookup, new Object[0], groups);
+    }
+
+    /**
+     * Creates a proxy implementing all given interfaces for a loader the
+     * library cannot see. When the set contains a non-{@code public} interface,
+     * the lookup must be rooted in that interface's package as well.
+     *
+     * @param interfaces  the interfaces to implement
+     * @param lookup      full-privilege lookup rooted in the interfaces' loader
+     * @param interceptor the method interceptor; must not be null
+     * @return a proxy instance implementing every interface
+     */
+    public static Object proxy(Class<?>[] interfaces,
+                               MethodHandles.Lookup lookup,
+                               Interceptor interceptor) {
+        if (interceptor == null) {
+            throw new IllegalArgumentException("interceptor must not be null");
+        }
+        return proxyInterfaces(interfaces,
+                new Group[]{Group.otherwise(interceptor)}, lookup);
+    }
+
+    /**
+     * Creates a proxy implementing all given interfaces with method-group-based
+     * assignment, for a loader the library cannot see.
+     *
+     * @param interfaces the interfaces to implement
+     * @param lookup     full-privilege lookup rooted in the interfaces' loader
+     * @param groups     one or more Group bindings; must not be null or empty
+     * @return a proxy instance implementing every interface
+     */
+    public static Object proxy(Class<?>[] interfaces,
+                               MethodHandles.Lookup lookup,
+                               Group... groups) {
+        return proxyInterfaces(interfaces, groups, lookup);
+    }
+
+    /**
+     * Creates a class proxy with constructor arguments, a
+     * {@link ConstructorInterceptor} hook, and a caller-supplied definition
+     * lookup, for targets the library's loader cannot see.
+     *
+     * @param target          the class to proxy
+     * @param lookup          full-privilege lookup rooted in the target's loader
+     * @param constructorArgs arguments to pass to the superclass constructor
+     * @param ctorInterceptor the constructor interceptor; must not be null
+     * @param groups          one or more Group bindings; must not be null or
+     *                        empty
+     * @param <T>             the proxy type
+     * @return a proxy instance of type {@code T}
+     */
+    public static <T> T proxy(Class<T> target, MethodHandles.Lookup lookup,
+                              Object[] constructorArgs,
+                              ConstructorInterceptor ctorInterceptor,
+                              Group... groups) {
+        return proxyClassWithCtorHook(target, lookup, constructorArgs,
+                ctorInterceptor, groups);
+    }
+
+    /**
+     * Creates an annotation-driven proxy for a target owned by a loader the
+     * library cannot see. See
+     * {@link #proxy(Class, MethodHandles.Lookup, Interceptor)} for the lookup
+     * contract.
+     *
+     * @param target      the class or interface to proxy
+     * @param lookup      full-privilege lookup rooted in the target's loader
+     * @param interceptor an instance of a {@code @Intercept}-annotated class
+     * @param <T>         the proxy type
+     * @return a proxy instance of type {@code T}
+     */
+    public static <T> T intercept(Class<T> target, MethodHandles.Lookup lookup,
+                                  Object interceptor) {
+        if (target == null) {
+            throw new IllegalArgumentException("target must not be null");
+        }
+        return proxy(target, lookup, resolveAnnotationGroups(interceptor));
+    }
+
+    /**
+     * Validates a caller-supplied definition lookup against the type it has to
+     * proxy, before any bytecode is generated. A hidden class is defined in the
+     * lookup class's loader and package, and can only implement the library's
+     * contract types if its module can read them; all three are checked here so
+     * none of them surfaces later as an uncatchable {@code Error}.
+     *
+     * @param lookup the supplied lookup; must not be {@code null}
+     * @param type   the target class, or the non-public anchor of an interface
+     *               set
+     * @throws IllegalArgumentException if the lookup cannot serve this target
+     */
+    private static void requireUsableLookup(MethodHandles.Lookup lookup,
+                                            Class<?> type) {
+        if (lookup == null) {
+            throw new IllegalArgumentException("lookup must not be null");
+        }
+        Class<?> root = lookup.lookupClass();
+        if (!lookup.hasFullPrivilegeAccess()) {
+            throw CrossLoaderDiagnostics.forLookup(type, root,
+                    "it lacks full privilege access; obtain it with "
+                            + "MethodHandles.privateLookupIn(targetClass, ...).");
+        }
+        if (root.getClassLoader() != type.getClassLoader()) {
+            throw CrossLoaderDiagnostics.forLookup(type, root,
+                    "its loader must be the loader that owns the target.");
+        }
+        if (!Modifier.isPublic(type.getModifiers())
+                && !root.getPackageName().equals(type.getPackageName())) {
+            throw CrossLoaderDiagnostics.forLookup(type, root,
+                    "the target is not public, so the lookup must be rooted in "
+                            + "the target's own package "
+                            + type.getPackageName() + ".");
+        }
+        requireContractTypesVisible(type, root);
+    }
+
+    /**
+     * Checks that the lookup's module can read, and its loader can resolve,
+     * every library type a generated proxy references.
+     *
+     * @param type the target type, for the diagnostic
+     * @param root the lookup's own class
+     */
+    private static void requireContractTypesVisible(Class<?> type,
+                                                    Class<?> root) {
+        for (Class<?> contract : new Class<?>[]{Interceptor.class,
+                DispatchTarget.class, Rebindable.class}) {
+            Module contractModule = contract.getModule();
+            if (root.getModule() != contractModule
+                    && !root.getModule().canRead(contractModule)) {
+                throw CrossLoaderDiagnostics.forModuleRead(type, contract,
+                        root.getModule());
+            }
+            try {
+                Class.forName(contract.getName(), false, root.getClassLoader());
+            } catch (ClassNotFoundException | LinkageError e) {
+                throw CrossLoaderDiagnostics.forLibraryType(type, contract,
+                        root.getClassLoader());
+            }
+        }
+    }
+
+    /**
+     * Internal-name package prefix of {@code type}'s package, {@code ""} for
+     * the default package.
+     */
+    private static String internalPackageOf(Class<?> type) {
+        String pkg = type.getPackageName();
+        return pkg.isEmpty() ? "" : pkg.replace('.', '/') + "/";
     }
 
     /**

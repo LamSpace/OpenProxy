@@ -345,8 +345,12 @@ class CrossClassLoaderLimitsTest {
                 "must name the target type: " + message);
         assertTrue(message.contains(child.getClass().getName()),
                 "must name the loader owning the target: " + message);
-        assertTrue(message.indexOf('@') != message.lastIndexOf('@'),
-                "must name both loaders: " + message);
+        String libraryLoader = OpenProxy.class.getClassLoader()
+                .getClass().getName();
+        assertTrue(message.contains(child.getClass().getName())
+                        && message.contains(libraryLoader)
+                        && !child.getClass().getName().equals(libraryLoader),
+                "must name two DISTINCT loaders: " + message);
         assertTrue(message.contains("Options:"),
                 "must state the remedies: " + message);
         assertNull(root.getCause(),

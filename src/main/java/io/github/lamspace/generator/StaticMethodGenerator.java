@@ -46,6 +46,7 @@ public class StaticMethodGenerator {
     private final Method[] methods;
     private final Interceptor[] interceptors;
     private final MethodMapping mapping;
+    private final String packageOverride;
 
     /**
      * Creates a generator for the given static methods.
@@ -56,9 +57,28 @@ public class StaticMethodGenerator {
      */
     public StaticMethodGenerator(Method[] methods, Interceptor[] interceptors,
                                  MethodMapping mapping) {
+        this(methods, interceptors, mapping, null);
+    }
+
+    /**
+     * Creates a generator that places the static proxy in a package other than
+     * the library's own. Needed when a caller supplies a definition
+     * {@code Lookup}: the JVM defines a hidden class in the lookup class's own
+     * package.
+     *
+     * @param methods         the static methods to shadow
+     * @param interceptors    deduped interceptor instances
+     * @param mapping         method → interceptor index mapping
+     * @param packageOverride dotted package for the generated class, or
+     *                        {@code null} for the library's own package
+     */
+    public StaticMethodGenerator(Method[] methods, Interceptor[] interceptors,
+                                 MethodMapping mapping,
+                                 String packageOverride) {
         this.methods = methods.clone();
         this.interceptors = interceptors.clone();
         this.mapping = mapping;
+        this.packageOverride = packageOverride;
     }
 
     /**
@@ -67,7 +87,11 @@ public class StaticMethodGenerator {
      * @return valid JVM classfile bytes
      */
     public byte[] generate() {
-        String generatedInternal = "io/github/lamspace/StaticProxy"
+        String packagePrefix = packageOverride != null
+                ? (packageOverride.isEmpty()
+                    ? "" : packageOverride.replace('.', '/') + "/")
+                : "io/github/lamspace/";
+        String generatedInternal = packagePrefix + "StaticProxy"
                 + "$$OpenProxy$$" + COUNTER.getAndIncrement();
 
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);

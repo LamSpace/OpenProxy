@@ -46,14 +46,40 @@ A hidden proxy class must be defined in a loader that can see both. Options:
     there too, so the interceptor and the proxy share one loader.
 ```
 
-今天可用的形态有两种：
+今天可用的形态有三种：
 
 1. 目标与库同属一个加载器，或对库的加载器**祖先可见**——`public` 的 JDK 接口即属此类，
    无需 `--add-opens`。
 2. 插件加载器持有 OpenProxy 的**私有副本**。此时传入的 `Interceptor` 必须来自同一个
    加载器：把别处创建的拦截器交给私有副本，会以 `argument type mismatch` 失败。
+3. 调用方提供定义用的 lookup，把生成类放进目标自己的加载器——见
+   [跨类加载器代理](#跨类加载器代理)。
 
-由调用方提供定义用 `Lookup`、从而代理库看不见的加载器里的目标，**当前尚不支持**——
-见 [ROADMAP.md](../../ROADMAP.md) 中的 `support-cross-classloader-proxy`。
+## 跨类加载器代理
+
+目标位于库看不见的加载器时，调用方可以直接提供用于定义生成类的 lookup：
+
+```java
+// 在插件加载器内部调用
+MethodHandles.Lookup lookup =
+        MethodHandles.privateLookupIn(Widget.class, MethodHandles.lookup());
+Widget proxy = OpenProxy.proxy(Widget.class, lookup, interceptor);
+```
+
+生成的类会被放入 **lookup 自己**的包、定义在 **lookup 自己**的加载器中，因此可以引用库的加载器
+看不见的类型。传入的 lookup 会在生成任何字节码前被校验，每种违例都抛出 `IllegalArgumentException`
+并点名出问题的加载器或模块：
+
+- 必须具备完全特权访问（`publicLookup()` 不够）；
+- 其类必须由目标所属的加载器加载；
+- 目标不是 `public` 时，lookup 必须根植于目标自己的包；
+- 目标的加载器必须能解析 OpenProxy 自身的类型（委托到库的加载器，或自带一份副本）。
+
+有一条限制是结构性的：lookup 的**模块**必须能 read 拥有 OpenProxy 类型的模块。OpenProxy 以
+classpath 构件发布（属 unnamed module），而命名模块永远无法 read unnamed module，所以位于
+**命名模块**中的目标不可代理——该情形会被明确报错，而不是留下 `IllegalAccessError`。
+
+传入的 lookup 会（按其根类）参与代理类的缓存标识，因此根类相同的两次调用复用同一个生成类，
+根类不同的永不共享。
 
 下一章：[迁移](12-migration_cn.md)。

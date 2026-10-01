@@ -59,9 +59,13 @@ final class CrossLoaderFixtures {
      * @return a child loader over the compiled fixtures
      * @throws Exception if the fixtures are missing or do not compile
      */
+    /** Second fixture package, used for the lookup-package rule. */
+    static final String OTHER_PKG = "com.acme.other";
+
     static ChildFirstClassLoader childLoader() throws Exception {
         return new ChildFirstClassLoader(urls(),
-                CrossLoaderFixtures.class.getClassLoader(), PKG + ".");
+                CrossLoaderFixtures.class.getClassLoader(),
+                PKG + ".", OTHER_PKG + ".");
     }
 
     /**

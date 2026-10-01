@@ -50,6 +50,7 @@ public class ClassGenerator {
     private final MethodMapping mapping;
     private final Object[] constructorArgs;
     private final boolean ctorIntercept;
+    private final String packageOverride;
 
     /**
      * Creates a generator for the given target class with no constructor
@@ -92,26 +93,53 @@ public class ClassGenerator {
     public ClassGenerator(Class<?> targetClass, Interceptor[] interceptors,
                           MethodMapping mapping, boolean ctorIntercept,
                           Object... constructorArgs) {
+        this(targetClass, interceptors, mapping, ctorIntercept, null,
+                constructorArgs);
+    }
+
+    /**
+     * Creates a generator that places the generated class in a package other
+     * than the target's. Needed when a caller supplies a definition
+     * {@code Lookup}: the JVM defines a hidden class in the lookup class's own
+     * package, so the generated name has to follow it.
+     *
+     * @param targetClass     the class to proxy
+     * @param interceptors    deduped interceptor instances
+     * @param mapping         method → interceptor index mapping
+     * @param ctorIntercept   whether to emit the constructor interception hook
+     * @param packageOverride dotted package for the generated class, or
+     *                        {@code null} to use the target's own package
+     * @param constructorArgs arguments to pass to the superclass constructor
+     */
+    public ClassGenerator(Class<?> targetClass, Interceptor[] interceptors,
+                          MethodMapping mapping, boolean ctorIntercept,
+                          String packageOverride,
+                          Object... constructorArgs) {
         this.targetClass = targetClass;
         this.interceptors = interceptors.clone();
         this.mapping = mapping;
         this.ctorIntercept = ctorIntercept;
+        this.packageOverride = packageOverride;
         this.constructorArgs = (constructorArgs == null)
                 ? new Object[0] : constructorArgs;
     }
 
     /**
-     * Generates the subclass bytecode. The class is placed in the same
-     * runtime package as the target class.
+     * Generates the subclass bytecode. The class is placed in the
+     * {@code packageOverride} package when one was given, otherwise in the
+     * same runtime package as the target class.
      *
      * @return valid JVM classfile bytes
      */
     public byte[] generate() {
         String targetInternal = Type.getInternalName(targetClass);
-        String packagePrefix = targetInternal.contains("/")
-                ? targetInternal.substring(0,
-                targetInternal.lastIndexOf('/') + 1)
-                : "";
+        String packagePrefix = packageOverride != null
+                ? (packageOverride.isEmpty()
+                    ? "" : packageOverride.replace('.', '/') + "/")
+                : (targetInternal.contains("/")
+                    ? targetInternal.substring(0,
+                    targetInternal.lastIndexOf('/') + 1)
+                    : "");
         String simpleName = targetInternal.substring(
                 targetInternal.lastIndexOf('/') + 1);
         String generatedInternal = packagePrefix + simpleName

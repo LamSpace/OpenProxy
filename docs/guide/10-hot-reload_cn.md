@@ -15,14 +15,23 @@ OpenProxy.evictClassLoader(pluginClassLoader); // 驱逐某加载器的代理
 
 ## 部署到全新的 ClassLoader
 
-驱逐是加载器感知的，生成不是：OpenProxy 目前无法代理"由库自身看不见的加载器所拥有"的类。
-因此 restart-classloader 式的热部署会失败，报错内容见
-[JPMS / 强封装](11-jpms_cn.md#类加载器约束) 中的跨加载器诊断；`evict` /
-`evictClassLoader` 覆盖的是今天可用的形态——目标在库的加载器里，或在持有 OpenProxy
-私有副本的加载器里。
+提供定义用的 lookup 之后，restart-classloader 式的热部署即可端到端工作：
 
-走私有副本路线时，`Interceptor` 也必须在同一加载器内创建：把其他加载器创建的拦截器交给
-副本，会以 `argument type mismatch` 失败。
+```java
+OpenProxy.evictClassLoader(oldLoader);   // 丢弃上一次部署
+Object proxy = OpenProxy.proxy(freshClass, freshLookup, interceptor);
+```
+
+- `evict(target)` 会清除该目标的全部缓存代理类，包括由不同 supplied lookup 创建的条目。
+- 缓存条目会让 supplied lookup（连带其加载器）保持可达，所以丢弃加载器的框架**必须**调用
+  `evictClassLoader(loader)`，没有别的东西会释放它。
+- 驱逐前创建的实例继续基于自己的隐藏类工作。
+
+lookup 的要求与命名模块的限制见
+[JPMS / 强封装](11-jpms_cn.md#跨类加载器代理)。
+
+若改为在插件加载器内持有 OpenProxy 私有副本，`Interceptor` 也必须在同一加载器内创建：
+把其他加载器创建的拦截器交给副本，会以 `argument type mismatch` 失败。
 
 ## 在活实例上替换拦截器
 

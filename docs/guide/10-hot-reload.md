@@ -15,17 +15,26 @@ Cache-key note: class proxies key on the target class; interface proxies key on 
 
 ## Redeploying into a fresh ClassLoader
 
-Eviction is loader-aware, but generation is not: OpenProxy cannot yet create a
-proxy for a class owned by a loader its own classes cannot see. A
-restart-classloader redeploy therefore fails with the cross-loader message
-described in [JPMS / Strong Encapsulation](11-jpms.md#class-loader-constraints),
-and `evict` / `evictClassLoader` cover the shapes that do work today — targets
-in the library's loader, or targets in a loader that owns its own OpenProxy
-copy.
+Supply the definition lookup and a restart-classloader redeploy works end to end:
 
-If you take the private-copy route, create the `Interceptor` inside that loader
-as well: handing the copy an interceptor from another loader fails with
-`argument type mismatch`.
+```java
+OpenProxy.evictClassLoader(oldLoader);   // drop the previous deployment
+Object proxy = OpenProxy.proxy(freshClass, freshLookup, interceptor);
+```
+
+- `evict(target)` drops every cached proxy class for that target, including the
+  ones created with different supplied lookups.
+- A cached entry keeps the supplied lookup — and therefore its loader —
+  reachable, so a framework that discards a loader MUST call
+  `evictClassLoader(loader)`; nothing else releases it.
+- Instances created before eviction keep serving from their own hidden class.
+
+See [JPMS / Strong Encapsulation](11-jpms.md#proxies-across-class-loaders) for
+the lookup's requirements and the named-module limit.
+
+If you keep a private OpenProxy copy inside the plugin loader instead, create the
+`Interceptor` in that loader as well: handing the copy an interceptor from
+another loader fails with `argument type mismatch`.
 
 ## Swapping interceptors on a live instance
 
