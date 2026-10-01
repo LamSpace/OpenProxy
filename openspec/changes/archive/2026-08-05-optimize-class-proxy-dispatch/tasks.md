@@ -1,3 +1,5 @@
+> **已废弃（superseded）**：本 change 的 index-based `MethodHandle[]` 调度在 `f576593`（2026-08-01）落地后，随即被 `234b8e3`（2026-08-02）的 hashCode 调度 + `Interceptor` 取代，归档提交 `f2290ce` 亦标注 superseded；`class-proxy-index-dispatch` 从未同步进 `openspec/specs/`。下方 `- [ ]` 是**未执行的废弃计划，不是待办**，当前 API 见 `openspec/specs/`。
+
 ## 1. Core: Callback interface and generated proxy changes
 
 - [ ] 1.1 Update `Callback.intercept` signature from `(Object, Method, MethodHandle, Object[])` to `(Object, Method, int, Object[])`

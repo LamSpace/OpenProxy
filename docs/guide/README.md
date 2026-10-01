@@ -24,4 +24,5 @@ Each chapter is self-contained: a short explanation, a runnable code example, th
 
 - [Benchmark Results](../benchmark-results.md)
 - [Migration Guide](../migration-guide.md)
+- [Roadmap](../../ROADMAP.md)
 - [Main README](../../README.md)

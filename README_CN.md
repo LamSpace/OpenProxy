@@ -170,6 +170,7 @@ mvn install -DskipTests
 - [用户指导](docs/guide/README_CN.md) — 13 章，含可运行示例
 - [基准测试报告（中文）](docs/benchmark-results_cn.md) / [English](docs/benchmark-results.md)
 - [迁移指南](docs/migration-guide.md)
+- [路线图](ROADMAP.md) — 未完成功能项与后续计划
 
 ## 📄 许可证
 
