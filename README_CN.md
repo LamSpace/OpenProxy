@@ -41,6 +41,7 @@
 - **静态方法代理** — `proxyStatic` 返回遮蔽 `public static` 方法的类
 - **注解驱动 API** — `@Intercept` / `@Around` 声明式匹配，lambda 级速度
 - **热加载/热替换** — `evict` / `evictClassLoader` 用于热部署类，`rebind` 原地替换拦截器
+- **跨 ClassLoader 代理** — `proxy` / `intercept` / `proxyStatic` 的 7 个入口均接受调用方传入的 `MethodHandles.Lookup`，把生成类定义到目标自己的类加载器
 
 ## ⚡ 快速开始
 
@@ -127,7 +128,7 @@ JMH 基准测试 | Java 25（单位 ns/op，越低越好）。完整表格、方
 
 类代理通过 `MethodHandles.privateLookupIn` 定义在目标类所在包内。若目标位于强封装模块 （任何未 `open` 的包，含 `java.util` 等 `java.base` 包），`proxy()` 会快速失败并给出可操作的
 `--add-opens` 提示。接口代理使用公共 lookup，仅支持 `public` 接口（与
-`java.lang.reflect.Proxy` 一致）。详见 [JPMS](docs/guide/11-jpms_cn.md)。
+`java.lang.reflect.Proxy` 一致）。目标属于其它 classpath 类加载器（如热部署加载器）时仍可代理：`proxy` / `intercept` / `proxyStatic` 的 7 个入口接受以目标加载器为根的 `MethodHandles.Lookup`，把生成类定义到该加载器（见[热加载](docs/guide/10-hot-reload_cn.md)）。命名模块中的目标暂不可代理，因为 OpenProxy 以 classpath（匿名模块）构件发布。详见 [JPMS](docs/guide/11-jpms_cn.md)。
 
 ## 📦 安装
 
@@ -170,7 +171,7 @@ mvn install -DskipTests
 - [用户指导](docs/guide/README_CN.md) — 13 章，含可运行示例
 - [基准测试报告（中文）](docs/benchmark-results_cn.md) / [English](docs/benchmark-results.md)
 - [迁移指南](docs/migration-guide.md)
-- [路线图](ROADMAP.md) — 未完成功能项与后续计划
+- [路线图](ROADMAP.md) — 按优先级排列的候选事项
 
 ## 📄 许可证
 

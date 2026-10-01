@@ -45,6 +45,7 @@ parity; default methods are ~6.5× faster.
 - **Static method proxy** — `proxyStatic` returns a class shadowing `public static` methods
 - **Annotation-driven API** — `@Intercept` / `@Around` declarative matching at lambda speed
 - **Hot reload / hot swap** — `evict` / `evictClassLoader` for hot-deployed classes, `rebind` to swap interceptors on a live instance
+- **Cross-ClassLoader proxy** — all seven `proxy` / `intercept` / `proxyStatic` entry points accept a caller-supplied `MethodHandles.Lookup` that defines the generated class in the target's own class loader
 
 ## ⚡ Quick Start
 
@@ -126,7 +127,7 @@ for the full picture.
 ## 🧩 JPMS / Strong Encapsulation
 
 Class proxies are defined in the target's package via `MethodHandles.privateLookupIn`. If the target lives in a strongly encapsulated module (any non-`open` package, including `java.base` packages such as `java.util`), `proxy()` fails fast with an actionable `--add-opens` hint. Interface proxies use a public lookup and support
-`public` interfaces only (same as `java.lang.reflect.Proxy`). See
+`public` interfaces only (same as `java.lang.reflect.Proxy`). Targets owned by another classpath loader can still be proxied: each of the seven `proxy` / `intercept` / `proxyStatic` entry points accepts a `MethodHandles.Lookup` rooted in the target's loader, which defines the generated class there (see [Hot reload](docs/guide/10-hot-reload.md)). Targets inside *named* modules are not proxyable while OpenProxy ships as a classpath (unnamed-module) artifact. See
 [JPMS](docs/guide/11-jpms.md).
 
 ## 📦 Installation
