@@ -139,7 +139,7 @@ OpenProxy 已发布到 Maven Central，直接声明依赖即可：
 <dependency>
     <groupId>io.github.lamspace</groupId>
     <artifactId>openproxy</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
@@ -165,7 +165,7 @@ mvn install -DskipTests
 | 热加载 / rebind   | ✅                   | ❌                          | ❌                        |
 | 注解驱动 API      | ✅                   | ❌                          | ❌                        |
 | 函数式 API        | ✅ lambda            | ✅                          | ✅                        |
-| Maven Central     | ✅ 0.1.0             | ✅                          | 内置                      |
+| Maven Central     | ✅ 0.2.0             | ✅                          | 内置                      |
 
 ## 📖 文档
 

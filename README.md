@@ -139,7 +139,7 @@ OpenProxy is available on Maven Central:
 <dependency>
     <groupId>io.github.lamspace</groupId>
     <artifactId>openproxy</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
 </dependency>
 ```
 
@@ -165,7 +165,7 @@ mvn install -DskipTests
 | Hot reload / rebind      | ✅                     | ❌                          | ❌                        |
 | Annotation-driven API    | ✅                     | ❌                          | ❌                        |
 | Functional API           | ✅ lambda              | ✅                          | ✅                        |
-| Maven Central            | ✅ 0.1.0                 | ✅                          | Built-in                  |
+| Maven Central            | ✅ 0.2.0                 | ✅                          | Built-in                  |
 
 ## 📖 Documentation
 
