@@ -127,7 +127,7 @@ for the full picture.
 ## 🧩 JPMS / Strong Encapsulation
 
 Class proxies are defined in the target's package via `MethodHandles.privateLookupIn`. If the target lives in a strongly encapsulated module (any non-`open` package, including `java.base` packages such as `java.util`), `proxy()` fails fast with an actionable `--add-opens` hint. Interface proxies use a public lookup and support
-`public` interfaces only (same as `java.lang.reflect.Proxy`). Targets owned by another classpath loader can still be proxied: each of the seven `proxy` / `intercept` / `proxyStatic` entry points accepts a `MethodHandles.Lookup` rooted in the target's loader, which defines the generated class there (see [Hot reload](docs/guide/10-hot-reload.md)). Targets inside *named* modules are not proxyable while OpenProxy ships as a classpath (unnamed-module) artifact. See
+`public` interfaces only (same as `java.lang.reflect.Proxy`). Targets owned by another classpath loader can still be proxied: each of the seven `proxy` / `intercept` / `proxyStatic` entry points accepts a `MethodHandles.Lookup` rooted in the target's loader, which defines the generated class there (see [Hot reload](docs/guide/10-hot-reload.md)). Targets inside *named* modules are proxyable from the module path: the jar declares `Automatic-Module-Name: io.github.lamspace.openproxy`, a single `requires` edge is the whole user-side contract (no exports needed). See
 [JPMS](docs/guide/11-jpms.md).
 
 ## 📦 Installation

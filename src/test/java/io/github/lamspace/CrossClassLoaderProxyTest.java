@@ -247,6 +247,9 @@ class CrossClassLoaderProxyTest {
                 diag.getMessage());
         assertTrue(diag.getMessage().contains(target.getModule().getName()),
                 diag.getMessage());
+        assertTrue(diag.getMessage().contains(
+                        "requires io.github.lamspace.openproxy"),
+                diag.getMessage());
     }
 
     // ------------------------------------------------------------------

@@ -112,12 +112,15 @@ public final class CrossLoaderDiagnostics {
                 + lookupModule.getName() + " cannot read module "
                 + describeModule(contractType.getModule()) + ", which owns "
                 + contractType.getName() + " — every generated proxy "
-                + "implements the library's types. OpenProxy is currently "
-                + "published as a classpath artifact (unnamed module), and a "
-                + "named module cannot read the unnamed module, so a target in"
-                + " a named module is not proxyable until OpenProxy itself "
-                + "ships a module declaration that the target module "
-                + "requires.");
+                + "implements the library's types. Remedy: put openproxy.jar and "
+                + "ASM on the module path and add \"requires "
+                + "io.github.lamspace.openproxy;\" to module "
+                + lookupModule.getName() + " (ASM is a named module, so root it "
+                + "too, e.g. --add-modules org.objectweb.asm). When OpenProxy "
+                + "sits on the classpath its types are in the unnamed module, "
+                + "which no named module can read; the classpath fallback "
+                + "requires --add-reads and --add-exports on every "
+                + "launch — see docs/guide/11-jpms.md.");
     }
 
     /**

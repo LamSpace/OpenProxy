@@ -108,7 +108,10 @@ final class NamedModuleFixture {
             throw new IllegalStateException("Missing test resource root "
                     + "/crossmodule");
         }
-        Path root = Paths.get(resource.toURI());
+        // Scope to this module only: /crossmodule now also holds sibling
+        // fixture modules (e.g. com.acme.proxyable) that compile against
+        // the library on the module path, not here.
+        Path root = Paths.get(resource.toURI()).resolve(MODULE_NAME);
         Path dir = Files.createTempDirectory("openproxy-namedmodule");
         Path src = dir.resolve("src");
         Path mods = dir.resolve("mods");

@@ -12,9 +12,15 @@ All notable changes to this project are documented in this file.
   package for non-public types, library-type visibility, module readability) is
   reported as an actionable `IllegalArgumentException` before any bytecode is
   generated.
-- Targets in a **named** module are reported as unsupported: OpenProxy ships as a
-  classpath (unnamed-module) artifact, and a named module cannot read the unnamed
-  module.
+- Named-module targets are now proxyable: the published jar declares
+  `Automatic-Module-Name: io.github.lamspace.openproxy`, and a target module
+  needs only `requires io.github.lamspace.openproxy;` — no exports or opens.
+  Supplied-lookup calls instantiate the generated proxy through that lookup's
+  own privilege (no-lookup paths keep the previous instantiation), so targets
+  in packages exported to no one work. ASM is a real named module and must be
+  rooted (`--add-modules org.objectweb.asm`); while OpenProxy stays on the
+  classpath its types live in the unnamed module, and the failure is reported
+  as before with the module-path remedy in the message.
 - Cross-loader proxy generation failures now name both loaders and state the
   remedies, instead of an opaque `IllegalAccessException` or an escaping
   `NoClassDefFoundError` / `IllegalAccessError`.

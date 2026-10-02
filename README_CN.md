@@ -128,7 +128,7 @@ JMH 基准测试 | Java 25（单位 ns/op，越低越好）。完整表格、方
 
 类代理通过 `MethodHandles.privateLookupIn` 定义在目标类所在包内。若目标位于强封装模块 （任何未 `open` 的包，含 `java.util` 等 `java.base` 包），`proxy()` 会快速失败并给出可操作的
 `--add-opens` 提示。接口代理使用公共 lookup，仅支持 `public` 接口（与
-`java.lang.reflect.Proxy` 一致）。目标属于其它 classpath 类加载器（如热部署加载器）时仍可代理：`proxy` / `intercept` / `proxyStatic` 的 7 个入口接受以目标加载器为根的 `MethodHandles.Lookup`，把生成类定义到该加载器（见[热加载](docs/guide/10-hot-reload_cn.md)）。命名模块中的目标暂不可代理，因为 OpenProxy 以 classpath（匿名模块）构件发布。详见 [JPMS](docs/guide/11-jpms_cn.md)。
+`java.lang.reflect.Proxy` 一致）。目标属于其它 classpath 类加载器（如热部署加载器）时仍可代理：`proxy` / `intercept` / `proxyStatic` 的 7 个入口接受以目标加载器为根的 `MethodHandles.Lookup`，把生成类定义到该加载器（见[热加载](docs/guide/10-hot-reload_cn.md)）。命名模块中的目标可经模块路径代理：发布 jar 声明 `Automatic-Module-Name: io.github.lamspace.openproxy`，用户侧只需一条 `requires` 边（无需任何导出）。详见 [JPMS](docs/guide/11-jpms_cn.md)。
 
 ## 📦 安装
 

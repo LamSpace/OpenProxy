@@ -628,7 +628,8 @@ public final class OpenProxy {
         try {
             Class<?> proxyClass = PROXY_CLASS_CACHE.get(target, params);
             return (T) instantiateProxy(proxyClass,
-                    matchResult.interceptors(), null, constructorArgs);
+                    matchResult.interceptors(), null, constructorArgs,
+                    lookup);
         } catch (Exception e) {
             throw new RuntimeException(
                     "Failed to create proxy for " + target.getName(), e);
@@ -742,7 +743,7 @@ public final class OpenProxy {
             Class<?> proxyClass = PROXY_CLASS_CACHE.get(target, params);
             return (T) instantiateProxy(proxyClass,
                     matchResult.interceptors(), ctorInterceptor,
-                    constructorArgs);
+                    constructorArgs, lookup);
         } catch (InvocationTargetException e) {
             Throwable cause = e.getCause();
             sneakyThrow(cause);
@@ -925,13 +926,19 @@ public final class OpenProxy {
     /**
      * Builds the generated proxy constructor's argument array
      * {@code [interceptors..., ctorInterceptor?, constructorArgs...]} and its
-     * parameter types, then reflectively instantiates the proxy class. A
-     * {@code null} {@code ctorInterceptor} omits the interception slot.
+     * parameter types, then instantiates the proxy class. A {@code null}
+     * {@code ctorInterceptor} omits the interception slot. When a caller
+     * supplied a definition lookup, construction goes through that lookup: it
+     * already defines the hidden class, so the same privilege instantiates it
+     * even when the target lives in a named module that exports nothing to
+     * the library. Calls without a lookup keep the reflective instantiation
+     * exactly as before.
      */
     private static Object instantiateProxy(Class<?> proxyClass,
                                            Interceptor[] interceptors,
                                            ConstructorInterceptor ctorInterceptor,
-                                           Object[] constructorArgs)
+                                           Object[] constructorArgs,
+                                           MethodHandles.Lookup lookup)
             throws Exception {
         int interceptorCount = interceptors.length;
         int ctorOffset = (ctorInterceptor == null) ? 0 : 1;
@@ -958,6 +965,20 @@ public final class OpenProxy {
                     (arg != null) ? arg.getClass() : Object.class;
         }
 
+        if (lookup != null) {
+            try {
+                return lookup.findConstructor(
+                        proxyClass,
+                        MethodType.methodType(void.class, ctorArgTypes))
+                        .invokeWithArguments(initArgs);
+            } catch (Throwable t) {
+                if (t instanceof Exception e) {
+                    throw e;
+                }
+                sneakyThrow(t);
+                throw new AssertionError(t);
+            }
+        }
         Constructor<?> ctor = proxyClass.getConstructor(ctorArgTypes);
         return ctor.newInstance(initArgs);
     }
@@ -1024,14 +1045,9 @@ public final class OpenProxy {
                 matchResult.mapping(), new Object[0], false, lookup);
         try {
             Class<?> proxyClass = PROXY_CLASS_CACHE.get(copy[0], params);
-            int interceptorCount = matchResult.interceptors().length;
-            Object[] initArgs = new Object[interceptorCount];
-            System.arraycopy(matchResult.interceptors(), 0, initArgs, 0,
-                    interceptorCount);
-            Class<?>[] ctorArgTypes = new Class<?>[interceptorCount];
-            Arrays.fill(ctorArgTypes, Interceptor.class);
-            Constructor<?> ctor = proxyClass.getConstructor(ctorArgTypes);
-            return ctor.newInstance((Object[]) initArgs);
+            return instantiateProxy(proxyClass,
+                    matchResult.interceptors(), null, new Object[0],
+                    lookup);
         } catch (Exception e) {
             throw new RuntimeException(
                     "Failed to create proxy for interfaces", e);

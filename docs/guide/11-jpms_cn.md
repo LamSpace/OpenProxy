@@ -75,11 +75,38 @@ Widget proxy = OpenProxy.proxy(Widget.class, lookup, interceptor);
 - 目标不是 `public` 时，lookup 必须根植于目标自己的包；
 - 目标的加载器必须能解析 OpenProxy 自身的类型（委托到库的加载器，或自带一份副本）。
 
-有一条限制是结构性的：lookup 的**模块**必须能 read 拥有 OpenProxy 类型的模块。OpenProxy 以
-classpath 构件发布（属 unnamed module），而命名模块永远无法 read unnamed module，所以位于
-**命名模块**中的目标不可代理——该情形会被明确报错，而不是留下 `IllegalAccessError`。
+有一条限制是结构性的：lookup 的**模块**必须能 read 拥有 OpenProxy 类型的模块——解除该限制的
+部署方式见下文[命名模块中的目标](#命名模块中的目标)。
 
 传入的 lookup 会（按其根类）参与代理类的缓存标识，因此根类相同的两次调用复用同一个生成类，
 根类不同的永不共享。
+
+## 命名模块中的目标
+
+命名模块永远无法 read unnamed module，因此 classpath 上的 OpenProxy 不能代理命名模块中的
+目标；该情形会被明确报错（`IllegalArgumentException`，点名两个模块），而不是留下
+`IllegalAccessError`。受支持的形态是把库本身部署为模块：将 `openproxy.jar` 与 ASM jar 放到
+`--module-path`，并在目标所在模块加一条边——无需任何 exports 或 opens：
+
+```java
+module com.acme.app {
+    requires io.github.lamspace.openproxy;
+}
+```
+
+发布 jar 已声明 `Automatic-Module-Name: io.github.lamspace.openproxy`；传入的 lookup 同时
+负责定义与构造生成的 hidden class，用的是它所授予的权限，因此对任何人都不导出的包也能工作。
+ASM（`org.objectweb.asm`）是真正的命名模块，自动模块无法把它拉进模块图，启动时需显式作为
+root：
+
+```bash
+java --module-path openproxy.jar:asm.jar:mods \
+     --add-modules org.objectweb.asm \
+     -m com.acme.app/com.acme.app.Main
+```
+
+（`--add-modules ALL-MODULE-PATH` 同样覆盖。）已发布的 0.1.0 构件若继续走 classpath 逃生门，
+每次启动需要两个 flag——`--add-reads <module>=ALL-UNNAMED`（补可读性）与
+`--add-exports <module>/<包名>=ALL-UNNAMED`（放行构造）；以上模块路径形态才是受支持的方式。
 
 下一章：[迁移](12-migration_cn.md)。

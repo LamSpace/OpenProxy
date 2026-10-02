@@ -85,13 +85,44 @@ module at fault:
   to the library's loader, or carry a copy).
 
 One limit is structural: the lookup's **module** must be able to read the module
-owning OpenProxy's types. OpenProxy is published as a classpath artifact (an
-unnamed module), and a named module can never read the unnamed module, so a
-target inside a named module is not proxyable — the failure is reported rather
-than left as an `IllegalAccessError`.
+owning OpenProxy's types — see [Named-module targets](#named-module-targets) for
+the deployment that lifts it.
 
 The supplied lookup joins the proxy-class cache identity (by its root class), so
 two calls with lookups rooted in the same class reuse one generated proxy class,
 while different roots never share one.
+
+## Named-module targets
+
+A named module can never read the unnamed module, so a classpath OpenProxy
+cannot proxy targets inside named modules; the failure is reported as an
+`IllegalArgumentException` naming both modules, not left as an
+`IllegalAccessError`. The supported shape deploys the library as a module:
+put `openproxy.jar` and the ASM jar on the `--module-path` and add one edge to
+the target's module — no exports or opens required:
+
+```java
+module com.acme.app {
+    requires io.github.lamspace.openproxy;
+}
+```
+
+The published jar declares `Automatic-Module-Name: io.github.lamspace.openproxy`,
+and the supplied lookup both defines and constructs the generated hidden class
+with the privilege it grants, so packages exported to no one work. ASM
+(`org.objectweb.asm`) is a real named module and an automatic module cannot pull
+it into the graph, so root it at launch:
+
+```bash
+java --module-path openproxy.jar:asm.jar:mods \
+     --add-modules org.objectweb.asm \
+     -m com.acme.app/com.acme.app.Main
+```
+
+(`--add-modules ALL-MODULE-PATH` covers this too.) For the already-published
+0.1.0 artifact the classpath fallback needs both
+`--add-reads <module>=ALL-UNNAMED` (readability) and
+`--add-exports <module>/<package>=ALL-UNNAMED` (construction) on every launch;
+the module-path shape above is the supported one.
 
 Next: [Migration](12-migration.md).
