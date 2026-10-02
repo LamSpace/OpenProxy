@@ -4,7 +4,7 @@
 
 本文件只记录**尚未立项的开放事项**。已完成功能的动机、实测数据与设计决策在 `openspec/changes/archive/<日期>-<change>/`，行为契约在 `openspec/specs/`，发布内容在 [CHANGELOG.md](CHANGELOG.md)。
 
-**当前状态（2026-10-01）**：`io.github.lamspace:openproxy:0.1.0` 已发布 Maven Central（tag `v0.1.0`）；无活动 change（22 个已归档）；GitHub issues / PR 为 0。最近完成的是跨 ClassLoader 代理与热部署：`archive/2026-10-01-clarify-cross-classloader-proxy-limits`（诊断 + 回归测试）与 `archive/2026-10-01-support-cross-classloader-proxy`（7 个 `MethodHandles.Lookup` 入口），实测矩阵与命名模块的 `IllegalAccessError` 证据见各自的 `design.md`。
+**当前状态（2026-10-02）**：`io.github.lamspace:openproxy:0.1.0` 已发布 Maven Central（tag `v0.1.0`）；无活动 change（23 个已归档）；GitHub issues / PR 为 0。最近完成的是命名模块中的目标代理：`archive/2026-10-02-support-named-module-targets`；其前是跨 ClassLoader 代理与热部署：`archive/2026-10-01-clarify-cross-classloader-proxy-limits`（诊断 + 回归测试）与 `archive/2026-10-01-support-cross-classloader-proxy`（7 个 `MethodHandles.Lookup` 入口），实测矩阵与命名模块的 `IllegalAccessError` 证据见各自的 `design.md`。
 
 ## 候选事项（未确认，暂不立项）
 

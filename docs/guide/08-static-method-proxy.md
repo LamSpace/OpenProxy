@@ -43,6 +43,18 @@ Class<?> cls = OpenProxy.proxyStatic(Utils.class,
 Methods matched by no group pass through to the original via a direct
 `INVOKESTATIC` (no interceptor). Methods are collected from the target and its superclasses, deduplicated subclass-first.
 
+## Supplied lookup
+
+```java
+Class<?> cls = OpenProxy.proxyStatic(Utils.class, lookup,
+        Group.otherwise(interceptor));
+```
+
+`proxyStatic(Class<?>, MethodHandles.Lookup, Group...)` defines the shadow class
+in the supplied lookup's loader and package, so a target in a loader OpenProxy
+cannot see is shadowable too. See
+[Proxies across class loaders](11-jpms.md#proxies-across-class-loaders).
+
 ## Notes and limits
 
 - **`Utils.add(...)` is not interceptable** — callers are compiled against the original class, so only calls on the returned `Class` route through the interceptor.

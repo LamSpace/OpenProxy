@@ -45,7 +45,12 @@ after io.github.lamspace.Greeter
 proxy(Class<T>, Interceptor, ConstructorInterceptor)
 proxy(Class<T>, ConstructorInterceptor, Group...)
 proxy(Class<T>, Object[] constructorArgs, ConstructorInterceptor, Group...)
+proxy(Class<T>, MethodHandles.Lookup, Object[] constructorArgs, ConstructorInterceptor, Group...)
 ```
+
+最后一个重载接受调用方传入的定义 lookup：生成类会被放入该 lookup 的包、定义在它的加载器
+中，用于库自己的加载器看不见的目标。见
+[跨类加载器代理](11-jpms_cn.md#跨类加载器代理)。
 
 ## 注意事项与限制
 

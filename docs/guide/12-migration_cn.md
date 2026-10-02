@@ -1,7 +1,7 @@
 # 12. 迁移
 
 本章展示从 CGLib 和 `java.lang.reflect.Proxy` 迁移到 OpenProxy 的最短路径。更详细的指南见
-[docs/migration-guide.md](../migration-guide.md)。
+[docs/migration-guide_cn.md](../migration-guide_cn.md)。
 
 ## 从 CGLib 迁移
 

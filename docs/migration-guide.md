@@ -183,6 +183,9 @@ Methods with the same signature and return type across interfaces are merged; am
 purely additive. CGLib has no post-construction callback swap — the equivalent
 is a fresh proxy per reloaded class — and `java.lang.reflect.Proxy` instances
 are immutable after creation, so neither has a direct counterpart for `rebind`.
-Note that `evict`/`evictClassLoader` only manage the *cache*; a target loaded by
-a child `ClassLoader` (with OpenProxy in a shared parent) needs the JPMS
-`--add-opens` strategy before it can be proxied at all.
+Note that `evict`/`evictClassLoader` only manage the *cache*. A target loaded by
+a child `ClassLoader` (with OpenProxy in a shared parent) is proxyable too: call
+one of the seven `proxy` / `intercept` / `proxyStatic` overloads that take a
+caller-supplied `MethodHandles.Lookup` rooted in that loader, which defines the
+generated class there — no `--add-opens` needed. See
+[Proxies across class loaders](guide/11-jpms.md#proxies-across-class-loaders).

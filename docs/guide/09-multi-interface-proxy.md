@@ -50,4 +50,16 @@ Constraints:
   `io.github.lamspace` — public JDK interfaces (e.g. `java.util.function.Function`)
   work unchanged.
 
+## Supplied lookup
+
+Both interface-array entry points also accept a definition lookup:
+
+```java
+Object p = OpenProxy.proxy(new Class<?>[]{Greeter.class, Auditable.class},
+        lookup, interceptor);          // Group... variant likewise
+```
+
+The generated class lands in the supplied lookup's loader and package — see
+[Proxies across class loaders](11-jpms.md#proxies-across-class-loaders).
+
 Next: [Hot Reload / Hot Swap](10-hot-reload.md).

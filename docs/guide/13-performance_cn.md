@@ -26,12 +26,15 @@ OpenProxy 的整个设计——hashCode 调度 + 直接 `INVOKESPECIAL`——就
 ## 运行基准测试
 
 ```bash
-mvn -s /home/lam/repo/settings.xml clean test-compile
-mvn -s /home/lam/repo/settings.xml dependency:build-classpath -Dmdep.outputFile=cp.txt -DincludeScope=test
+mvn -s <your-settings.xml> clean test-compile
+mvn -s <your-settings.xml> dependency:build-classpath -Dmdep.outputFile=cp.txt -DincludeScope=test
 java --enable-native-access=ALL-UNNAMED \
      --add-opens java.base/java.lang=ALL-UNNAMED \
      -cp "target/classes:target/test-classes:$(cat cp.txt)" \
      org.openjdk.jmh.Main "io.github.lamspace.benchmark"
 ```
+
+（`-s <your-settings.xml>` 仅在你的 Maven 需要自定义 settings 文件时才需要——否则去掉该
+参数，使用默认的 `~/.m2/settings.xml`。）
 
 套件默认为 `AverageTime` / 纳秒，3 次预热 + 5 次测量（各 1 秒），单 fork （见各类的 `@Warmup` / `@Measurement` / `@Fork` 注解）。

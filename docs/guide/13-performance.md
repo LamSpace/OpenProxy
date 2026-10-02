@@ -27,13 +27,16 @@ Benchmarks live in `src/test/java/io/github/lamspace/benchmark/`:
 ## Running the benchmarks
 
 ```bash
-mvn -s /home/lam/repo/settings.xml clean test-compile
-mvn -s /home/lam/repo/settings.xml dependency:build-classpath -Dmdep.outputFile=cp.txt -DincludeScope=test
+mvn -s <your-settings.xml> clean test-compile
+mvn -s <your-settings.xml> dependency:build-classpath -Dmdep.outputFile=cp.txt -DincludeScope=test
 java --enable-native-access=ALL-UNNAMED \
      --add-opens java.base/java.lang=ALL-UNNAMED \
      -cp "target/classes:target/test-classes:$(cat cp.txt)" \
      org.openjdk.jmh.Main "io.github.lamspace.benchmark"
 ```
+
+(`-s <your-settings.xml>` is only needed when your Maven requires a custom
+settings file — drop the flag to use your default `~/.m2/settings.xml`.)
 
 The suite defaults to `AverageTime` / nanoseconds, 3 warmup + 5 measurement iterations of 1 s each, single fork (see the `@Warmup` / `@Measurement` /
 `@Fork` annotations on each class).

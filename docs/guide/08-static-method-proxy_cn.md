@@ -42,6 +42,17 @@ Class<?> cls = OpenProxy.proxyStatic(Utils.class,
 
 未匹配任何组的方法通过直接 `INVOKESTATIC` 直通原方法（无拦截器）。方法从目标类及其父类收集， 子类优先去重。
 
+## 传入 lookup
+
+```java
+Class<?> cls = OpenProxy.proxyStatic(Utils.class, lookup,
+        Group.otherwise(interceptor));
+```
+
+`proxyStatic(Class<?>, MethodHandles.Lookup, Group...)` 把生成类定义在传入 lookup 的包与
+加载器中，因此位于库看不见的加载器里的目标同样可以遮蔽。见
+[跨类加载器代理](11-jpms_cn.md#跨类加载器代理)。
+
 ## 注意事项与限制
 
 - **`Utils.add(...)` 不可被拦截**——调用方针对原类编译，只有对返回 `Class` 的调用才会经过 拦截器。

@@ -15,8 +15,8 @@ Each chapter is self-contained: a short explanation, a runnable code example, th
 7. [Constructor Interception](07-constructor-interception.md) — hooks around the superclass constructor
 8. [Static Method Proxy](08-static-method-proxy.md) — shadowing `public static` methods
 9. [Multi-Interface Proxy](09-multi-interface-proxy.md) — one proxy, several interfaces (including non-public ones)
-10. [Hot Reload / Hot Swap](10-hot-reload.md) — `evict`, `evictClassLoader`, and `rebind`
-11. [JPMS / Strong Encapsulation](11-jpms.md) — proxying classes in encapsulated modules
+10. [Hot Reload / Hot Swap](10-hot-reload.md) — `evict`, `evictClassLoader`, `rebind`, and redeploying into a fresh loader
+11. [JPMS / Strong Encapsulation](11-jpms.md) — class-loader constraints, cross-classloader proxying, named-module targets, `--add-opens`
 12. [Migration](12-migration.md) — move from CGLib and `java.lang.reflect.Proxy`
 13. [Performance & Benchmarking](13-performance.md) — what the benchmarks show and how to run them
 

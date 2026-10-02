@@ -45,7 +45,13 @@ after io.github.lamspace.Greeter
 proxy(Class<T>, Interceptor, ConstructorInterceptor)
 proxy(Class<T>, ConstructorInterceptor, Group...)
 proxy(Class<T>, Object[] constructorArgs, ConstructorInterceptor, Group...)
+proxy(Class<T>, MethodHandles.Lookup, Object[] constructorArgs, ConstructorInterceptor, Group...)
 ```
+
+The last overload takes a caller-supplied definition lookup: the generated class
+is placed in that lookup's package and defined in its loader, for targets
+OpenProxy's own loader cannot see. See
+[Proxies across class loaders](11-jpms.md#proxies-across-class-loaders).
 
 ## Notes and limits
 

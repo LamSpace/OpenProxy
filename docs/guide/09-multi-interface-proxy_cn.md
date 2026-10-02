@@ -48,4 +48,16 @@ proxy.shout("hi");      // invokeSuper 调用默认实现
 - 当所有接口都是 public 时，生成类位于 `io.github.lamspace` 包——public JDK 接口（如
   `java.util.function.Function`）照常可用。
 
+## 传入 lookup
+
+两个接口数组入口同样接受定义用的 lookup：
+
+```java
+Object p = OpenProxy.proxy(new Class<?>[]{Greeter.class, Auditable.class},
+        lookup, interceptor);          // Group... 变体同理
+```
+
+生成类会落在传入 lookup 的加载器与包内——见
+[跨类加载器代理](11-jpms_cn.md#跨类加载器代理)。
+
 下一章：[热加载 / 热替换](10-hot-reload_cn.md)。

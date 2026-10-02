@@ -26,6 +26,9 @@ String s = proxy.getGreeting();   // 经 measure() 路由
 - `@Intercept` 标记容器类。
 - `@Around` 标记要绑定为拦截器的方法，作用于匹配的目标方法。
 - `OpenProxy.intercept(target, interceptorObject)` 构建代理。
+- `OpenProxy.intercept(Class<T>, MethodHandles.Lookup, Object)` 是跨类加载器变体：
+  传入的 lookup 把生成类定义在它自己的加载器与包内（见
+  [跨类加载器代理](11-jpms_cn.md#跨类加载器代理)）。
 
 `@Around` 方法必须是实例方法，签名为 `(Object, Method, Object[])`，返回引用类型 （不能是 `void`/基本类型）。
 

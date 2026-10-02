@@ -26,6 +26,10 @@ String s = proxy.getGreeting();   // routed through measure()
 - `@Intercept` marks the container class.
 - `@Around` marks a method to bind as an interceptor for matching target methods.
 - `OpenProxy.intercept(target, interceptorObject)` builds the proxy.
+- `OpenProxy.intercept(Class<T>, MethodHandles.Lookup, Object)` is the
+  cross-classloader variant: the supplied lookup defines the generated class in
+  its own loader and package (see
+  [Proxies across class loaders](11-jpms.md#proxies-across-class-loaders)).
 
 The `@Around` method must be an instance method with signature
 `(Object, Method, Object[])` returning a reference type (not `void`/primitive).

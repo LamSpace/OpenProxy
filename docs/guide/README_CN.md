@@ -16,14 +16,14 @@
 7. [构造器拦截](07-constructor-interception_cn.md) — 父类构造器前后的钩子
 8. [静态方法代理](08-static-method-proxy_cn.md) — 遮蔽 `public static` 方法
 9. [多接口代理](09-multi-interface-proxy_cn.md) — 一个代理实现多个接口（含非 public 接口）
-10. [热加载 / 热替换](10-hot-reload_cn.md) — `evict`、`evictClassLoader` 与 `rebind`
-11. [JPMS / 强封装](11-jpms_cn.md) — 代理强封装模块中的类
+10. [热加载 / 热替换](10-hot-reload_cn.md) — `evict`、`evictClassLoader`、`rebind`，以及部署到全新加载器
+11. [JPMS / 强封装](11-jpms_cn.md) — 类加载器约束、跨类加载器代理、命名模块中的目标、`--add-opens`
 12. [迁移](12-migration_cn.md) — 从 CGLib 和 `java.lang.reflect.Proxy` 迁移
 13. [性能与基准测试](13-performance_cn.md) — 基准测试结论与运行方法
 
 ## 相关文档
 
 - [基准测试报告](../benchmark-results_cn.md)
-- [迁移指南](../migration-guide.md)
+- [迁移指南](../migration-guide_cn.md)
 - [路线图](../../ROADMAP.md)
 - [项目 README](../../README_CN.md)

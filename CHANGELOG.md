@@ -24,9 +24,20 @@ All notable changes to this project are documented in this file.
 - Cross-loader proxy generation failures now name both loaders and state the
   remedies, instead of an opaque `IllegalAccessException` or an escaping
   `NoClassDefFoundError` / `IllegalAccessError`.
-- New tests: `CrossClassLoaderProxyTest` (16) and `CrossClassLoaderLimitsTest` (12)
-  pin the boundary, the cache identity, hot redeployment across loaders, and the
-  lookup-retention contract.
+- New tests: `CrossClassLoaderProxyTest` (17), `CrossClassLoaderLimitsTest` (12),
+  and `NamedModuleProxyTest` (5) pin the loader boundary, the cache identity, hot
+  redeployment across loaders, the lookup-retention contract, and named-module
+  deployment (suite total 254).
+- Documentation: every guide chapter that lists entry points now covers the
+  supplied-lookup variants (Installation gains a module-path deployment section;
+  the Annotation, Constructor-interception, Static-method and Multi-interface
+  chapters link to the cross-classloader contract), and the guide index describes
+  what chapters 10 and 11 actually contain. `docs/migration-guide_cn.md` joins the
+  existing English migration guide. Corrected: the migration guide's claim that a
+  target in a child class loader needs `--add-opens` before it can be proxied, and
+  the README wording that read as if all entry points took a lookup. Stale counts
+  refreshed (254 tests, 23 archived changes) and a CI status badge was added to
+  both READMEs. No behavior change.
 
 ## v0.1.0 (2026-09-28)
 
