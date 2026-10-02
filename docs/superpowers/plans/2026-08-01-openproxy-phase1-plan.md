@@ -1,6 +1,6 @@
 # OpenProxy Phase 1 — Documentation & Performance Validation Implementation Plan
 
-> **状态（2026-10-01）**：本计划已实现并合入 master（个别遗留项见根目录 `ROADMAP.md`），对应 OpenSpec change 已归档于 `openspec/changes/archive/`；正文中未回填的 `- [ ]` 仅为历史记录，**不代表待办**，请勿据此重跑本计划。
+> **状态（2026-10-01）**：本计划已实现并合入 master，对应 OpenSpec change 已归档于 `openspec/changes/archive/`；正文中未回填的 `- [ ]` 仅为历史记录，**不代表待办**，请勿据此重跑本计划。
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

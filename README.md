@@ -172,7 +172,6 @@ mvn install -DskipTests
 - [User Guide](docs/guide/README.md) — 13 chapters with runnable examples
 - [Benchmark Results (EN)](docs/benchmark-results.md) / [中文](docs/benchmark-results_cn.md)
 - [Migration Guide](docs/migration-guide.md)
-- [Roadmap](ROADMAP.md) — open items and planned next steps
 
 ## 📄 License
 
