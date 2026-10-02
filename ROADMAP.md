@@ -4,11 +4,11 @@
 
 本文件只记录**尚未立项的开放事项**。已完成功能的动机、实测数据与设计决策在 `openspec/changes/archive/<日期>-<change>/`，行为契约在 `openspec/specs/`，发布内容在 [CHANGELOG.md](CHANGELOG.md)。
 
-**当前状态（2026-10-02）**：`io.github.lamspace:openproxy:0.2.0` 发布材料已就绪（版本号已 bump、CHANGELOG 定稿、README 与 Installation 依赖坐标同步、tag `v0.2.0`），待人工执行 `mvn -Prelease clean deploy` 与 Portal Publish（见 `maven-central-发布流程.md` §1）；已上架版本仍为 `0.1.0`（tag `v0.1.0`）。无活动 change（23 个已归档）；GitHub issues / PR 为 0。最近完成的是命名模块中的目标代理：`archive/2026-10-02-support-named-module-targets`；其前是跨 ClassLoader 代理与热部署：`archive/2026-10-01-clarify-cross-classloader-proxy-limits`（诊断 + 回归测试）与 `archive/2026-10-01-support-cross-classloader-proxy`（7 个 `MethodHandles.Lookup` 入口），实测矩阵与命名模块的 `IllegalAccessError` 证据见各自的 `design.md`。
+**当前状态（2026-10-02）**：`io.github.lamspace:openproxy:0.2.0` 已发布 Maven Central（tag `v0.2.0`，repo1 上 pom/jar/sources/javadoc 与 GPG 签名齐备）；无活动 change（23 个已归档）；GitHub issues / PR 为 0。最近完成的是命名模块中的目标代理：`archive/2026-10-02-support-named-module-targets`；其前是跨 ClassLoader 代理与热部署：`archive/2026-10-01-clarify-cross-classloader-proxy-limits`（诊断 + 回归测试）与 `archive/2026-10-01-support-cross-classloader-proxy`（7 个 `MethodHandles.Lookup` 入口），实测矩阵与命名模块的 `IllegalAccessError` 证据见各自的 `design.md`。
 
 ## 候选事项（未确认，暂不立项）
 
-以下几项均已核实（附证据），但项目此前没有把任何一条记录为计划，需要你确认后再决定是否立项。**已按建议起手顺序排列**；2026-10-01 确认并完成了 P1 与两条 P2（小节保留备查），2026-10-02 完成 P3（`support-named-module-targets`）与 P0 的版本 bump 部分，开放事项清零，仅余发布执行：
+以下几项均已核实（附证据），但项目此前没有把任何一条记录为计划，需要你确认后再决定是否立项。**已按建议起手顺序排列**；2026-10-01 确认并完成了 P1 与两条 P2（小节保留备查），2026-10-02 完成 P3（`support-named-module-targets`）与 P0（`0.2.0` 已发布），开放事项清零：
 
 | 优先级 | 含义 |
 |---|---|
@@ -17,9 +17,9 @@
 | P2 | 有空就还 —— 债或基建，不阻塞功能 |
 | P3 | 先决策再做 —— 需要选方向，且影响面最窄 |
 
-### P0 · ✅ 已完成（2026-10-02，发布执行待人工）版本号 bump 至 0.2.0
+### P0 · ✅ 已完成（2026-10-02）版本号 bump 至 0.2.0 并发布
 
-`pom.xml` 已 bump `0.1.0` → `0.2.0`（新增入口与命名模块支持均为纯增量、零 breaking，拟版本号取 minor），`CHANGELOG.md` 的 `## Unreleased` 定稿为 `## 0.2.0 (2026-10-02)`，[README.md](README.md)、[README_CN.md](README_CN.md) 与 `docs/guide/02-installation*.md` 依赖坐标同步 0.2.0。发布材料验证：`mvn -s /home/lam/repo/settings.xml -Prelease -Dgpg.skip=true clean install` 于 JDK 25.0.3 全绿（254 tests），main/sources/javadoc 三构件齐备。剩余步骤为人工执行：暂停 IDE 后台构建后 `mvn -s /home/lam/repo/settings.xml -Prelease clean deploy`（交互式输 GPG passphrase）→ Portal *Publishing* 待 *Validated* 后点 **Publish**（`autoPublish=false`）。
+`pom.xml` 已 bump `0.1.0` → `0.2.0`（新增入口与命名模块支持均为纯增量、零 breaking，拟版本号取 minor），`CHANGELOG.md` 的 `## Unreleased` 定稿为 `## 0.2.0 (2026-10-02)`，[README.md](README.md)、[README_CN.md](README_CN.md) 与 `docs/guide/02-installation*.md` 依赖坐标同步 0.2.0。发布材料验证：`mvn -s /home/lam/repo/settings.xml -Prelease -Dgpg.skip=true clean install` 于 JDK 25.0.3 全绿（254 tests），main/sources/javadoc 三构件齐备。人工发布步骤（交互式 deploy 输 GPG passphrase → Portal *Validated* 后点 **Publish**）已于 2026-10-02 全部执行完毕，Publish 后约 25 分钟 repo1 可拉取全部构件。
 
 ### P1 · ✅ 已完成（2026-10-01）README 未提跨加载器能力
 
